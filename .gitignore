@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# CALISTIR.bat / run_alns üretimleri (teslim edilen plan TESLIM/ altında)
+Optimizasyon/outputs/*
+!Optimizasyon/outputs/.gitkeep
+
+# Editör / işletim sistemi
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

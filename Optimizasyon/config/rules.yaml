@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "manifest_conventions": {
+    "all_columns_listed_under_columns_are_required": true,
+    "file_names_are_matched_with_unicode_normalization": "NFC",
+    "source_workbooks_are_read_only": true
+  },
+  "paths": {
+    "raw_data_dir": "raw/current",
+    "development_forecast": "data/interim/development_forecast.xlsx",
+    "transport_plan_output": "outputs/TAŞIMA PLANI.xlsx"
+  },
+  "files": {
+    "network": {
+      "filename": "sehirler_arasi_lojistik.xlsx",
+      "sheet": "Sheet1",
+      "role": "static",
+      "columns": {
+        "origin": "cikis",
+        "destination": "varis",
+        "distance_km": "mesafe_km",
+        "travel_hours_truck": "Tir_Suresi_Saat",
+        "travel_hours_medium_truck": "Kamyon_Suresi_Saat",
+        "travel_hours_light_truck": "Hafif_Kamyon_Suresi_Saat",
+        "travel_hours_van": "Kamyonet_Suresi_Saat",
+        "target_delivery_days": "hedef_teslim_gun"
+      },
+      "travel_time_vehicle_types": {
+        "travel_hours_truck": "Tır",
+        "travel_hours_medium_truck": "Kamyon",
+        "travel_hours_light_truck": "Hafif Kamyon",
+        "travel_hours_van": "Kamyonet"
+      }
+    },
+    "vehicle_types": {
+      "filename": "Araç_Kapasite_Maliyet_Saat.xlsx",
+      "sheet": "Sayfa1",
+      "role": "static",
+      "columns": {
+        "name": "Araç Adı",
+        "capacity_desi": "Kapasite (desi)",
+        "rented_hourly_cost_tl": "Kiralık Araç Saatlik Kira (TL)",
+        "rented_cost_per_km_tl": "Kiralık Araç Kilometre Başına Maliyet (TL)",
+        "spot_hourly_cost_tl": "Spot Araç Saatlik Kira (TL)",
+        "spot_cost_per_km_tl": "Spot Kilometre Başına Maliyet (TL)"
+      }
+    },
+    "mandatory_rentals": {
+      "filename": "Kiralık_Araclar.xlsx",
+      "sheet": "Sayfa1",
+      "role": "static",
+      "columns": {
+        "origin": "Çıkış Transfer Merkezi",
+        "destination": "Varış Transfer Merkezi",
+        "vehicle_count": "Araç sayısı",
+        "vehicle_type": "Araç Türü"
+      }
+    },
+    "handling_capacities": {
+      "filename": "Ellecleme-kapasite.xlsx",
+      "sheet": "Sayfa1",
+      "role": "static",
+      "columns": {
+        "center": "transfer_merkezi",
+        "max_daily_desi": "ellecleme_kapasite"
+      }
+    },
+    "truck_capacities": {
+      "filename": "tir_kapasiteleri v2.xlsx",
+      "sheet": "table.tsv",
+      "role": "static",
+      "columns": {
+        "center": "transfer_merkezi",
+        "max_daily_truck_visits": "tir_kapasitesi"
+      }
+    },
+    "historical_demand": {
+      "filename": "teknofest26_gelismis.xlsx",
+      "sheet": "Sheet1",
+      "role": "demand",
+      "columns": {
+        "demand_date": "tarih",
+        "origin": "cikis",
+        "destination": "varis",
+        "demand_id": "talep_id",
+        "desi": "toplam_desi",
+        "time_slot": "talep_tamamlanma_saati"
+      }
+    },
+    "forecast_demand_template": {
+      "filename": "TALEP TAHMİNİ.xlsx",
+      "sheet": "Sheet1",
+      "role": "demand_template",
+      "columns": {
+        "demand_id": "Talep ID",
+        "demand_date": "Tarih",
+        "time_slot": "Talep Tamamlama Saati",
+        "origin": "Çıkış Transfer Merkezi",
+        "destination": "Varış Transfer Merkezi",
+        "desi": "Tahmin Edilen Desi"
+      }
+    },
+    "transport_plan_template": {
+      "filename": "TAŞIMA PLANI.xlsx",
+      "sheet": "Sheet1",
+      "role": "output_template",
+      "columns": {
+        "vehicle_id": "Araç ID",
+        "vehicle_ownership_type": "Araç Tipi",
+        "vehicle_type": "Araç türü",
+        "origin": "Çıkış Transfer Merkezi",
+        "destination": "Varış Transfer Merkezi",
+        "departure_date": "Çıkış Tarihi",
+        "departure_time": "Çıkış Saati",
+        "arrival_date": "Varış Tarihi",
+        "arrival_time": "Varış Saati",
+        "demand_id": "Talep ID",
+        "carried_desi": "Taşınan Desi",
+        "travel_hours": "Yolculuk süresi",
+        "arrival_handling_hours": "Varış elleçleme süresi",
+        "departure_handling_hours": "Çıkış Elleçleme süresi",
+        "sla_penalty_tl": "SLA cezası",
+        "total_cost_tl": "Toplam maliyet"
+      }
+    }
+  },
+  "rules": {
+    "forecast_window": {
+      "start_date": "2026-06-29",
+      "end_date": "2026-07-05",
+      "time_slots": [
+        "09:00",
+        "17:00"
+      ]
+    },
+    "planning_horizon": {
+      "end_condition": "all_forecast_demands_delivered",
+      "allow_activity_after_forecast_window": true,
+      "include_post_window_travel_cost": true,
+      "include_post_window_handling_cost": true,
+      "include_post_window_vehicle_cost": true,
+      "include_post_window_delay_cost": true,
+      "allow_cost_avoidance_by_deferring_outside_window": false
+    },
+    "minimum_fill": {
+      "first_departure_minimum_ratio": 0.0,
+      "empty_first_departure_allowed": true,
+      "empty_vehicle_costed_normally": true
+    },
+    "handling": {
+      "minutes_per_desi": 0.01,
+      "midnight_capacity_allocation": "proportional_by_elapsed_time",
+      "same_vehicle_intermediate_sequence": "unload_then_load",
+      "minimum_wait_between_unload_and_reload_minutes": 0.0,
+      "simultaneous_dock_capacity_enabled": false,
+      "parallel_vehicle_handling_allowed": true,
+      "parallel_handling_requires_available_handling_capacity": true,
+      "no_overlap_constraint_enabled": false,
+      "vehicle_queue_constraint_enabled": false
+    },
+    "truck_daily_quota": {
+      "interpretation": "daily_total_truck_processing_or_visit_quota",
+      "vehicle_type": "Tır",
+      "applies_to_rented_trucks": true,
+      "applies_to_spot_trucks": true,
+      "period": "local_calendar_day",
+      "reset_time": "00:00",
+      "counting": {
+        "departure_consumes_origin_quota_on_departure_day": 1,
+        "arrival_consumes_destination_quota_on_arrival_day": 1,
+        "arrivals_and_departures_share_one_daily_pool": true,
+        "continuous_unload_reload_visit_counts_once": true,
+        "leave_and_return_same_day_starts_new_visit": true,
+        "handling_cross_midnight_splits_visit_quota": false,
+        "continuous_visit_midnight_policy": "arrival_day"
+      }
+    },
+    "mandatory_rentals": {
+      "cadence": "daily",
+      "operate_when_empty": true,
+      "empty_operation_costed_normally": true,
+      "continue_after_forecast_end_while_demands_remain": true,
+      "continuation_uses_same_counts": true,
+      "continuation_uses_same_routes": true,
+      "allow_additional_mandatory_vehicles_after_forecast_end": false,
+      "allow_fewer_mandatory_vehicles_after_forecast_end": false,
+      "allow_intermediate_stops": false,
+      "allow_return_trip": false,
+      "unique_vehicle_id_per_daily_vehicle": true,
+      "schedule_end_policy": "through_demand_completion_date",
+      "completion_date_is_included": true,
+      "create_new_departures_after_all_demands_delivered": false,
+      "complete_started_vehicle_movements": true,
+      "include_cost_of_started_vehicle_movements": true
+    },
+    "costs": {
+      "hourly_usage_rounding": "ceiling_to_next_whole_hour",
+      "fractional_positive_hour_rounds_up": true,
+      "hourly_cost_granularity": "vehicle",
+      "usage_time_boundary_policy": "activity_envelope",
+      "include_idle_between_activities": true,
+      "sla_penalty_per_desi_hour_tl": 0.4,
+      "sla_delay_rounding": "ceiling_to_next_whole_hour",
+      "sla_rounding_scope": "demand_part_final_delivery"
+    },
+    "surprise_dataset": {
+      "only_demand_desi_changes": true,
+      "network_is_static": true,
+      "vehicle_types_and_costs_are_static": true,
+      "mandatory_rental_routes_are_static": true,
+      "handling_capacities_are_static": true,
+      "daily_truck_capacities_are_static": true
+    },
+    "solution_requirement": {
+      "mathematical_optimality_proof_required": false
+    },
+    "temporary_output_policy": {
+      "exporter_implemented": true,
+      "vehicle_ownership_labels": {
+        "mandatory_rented": "Kiralık",
+        "spot": "Spot"
+      },
+      "multiple_demand_ids_per_physical_vehicle_row": {
+        "mode": "explode",
+        "example": "Ayni bacakta D0001-1 ve D0002-1 varsa iki ayri satir yazilir.",
+        "cost_and_handling_allocation": "proportional_by_desi",
+        "travel_hours_allocation": "repeated_whole",
+        "sla_allocation": "own_demand_part_only",
+        "source": "Yarisma yetkililerinden gelen e-posta cevabi: D001'e %40, D002'ye %60 maliyet ve sure olarak dagitilmalidir.",
+        "configurable": false
+      },
+      "timestamp_output_resolution": {
+        "mode": "truncate_to_minute",
+        "source": "Q&A 11.4: cikis/varis saati icin SS:DD yeterlidir.",
+        "note": "Yalniz Excel ciktisinda uygulanir; planin ic zaman damgalari ve bunlardan hesaplanan maliyet/SLA tam hassasiyetini korur. Excel hh:mm bicimi ham degeri zaten asagi yuvarlayarak gosterdigi icin, saklanan deger de asagi yuvarlanir; boylece dosyayi gozle acan ile programla okuyan ayni saati gorur.",
+        "not_related_to": "Sure yuvarlamalari (faturalanan saat, SLA gecikme saati) yukari yuvarlanir ve src/evaluation/costs.py icinde uygulanir. Bu ayar onlarla ilgili degildir."
+      },
+      "empty_mandatory_vehicle": {
+        "demand_id": 0,
+        "desi": 0,
+        "configurable": true
+      }
+    }
+  },
+  "validation": {
+    "require_complete_directed_network": true,
+    "required_columns_are_errors": true,
+    "invalid_data_types_are_errors": true,
+    "negative_numeric_values_are_errors": true,
+    "unknown_centers_are_errors": true,
+    "missing_distance_or_travel_time_is_error": true,
+    "duplicate_business_keys_are_errors": true,
+    "invalid_dates_or_times_are_errors": true,
+    "allowed_demand_time_slots": [
+      "09:00",
+      "17:00"
+    ],
+    "oversized_demand": {
+      "is_error": false,
+      "mark_split_required": true
+    },
+    "solution": {
+      "desi_tolerance": 1e-06,
+      "travel_time_tolerance_minutes": 0.01,
+      "handling_duration_tolerance_seconds": 1.0,
+      "cost_tolerance_tl": 0.01,
+      "capacity_evaluation_scope": "vehicle_leg_carried_load",
+      "reported_cost_breakdown_required": false
+    },
+    "business_keys": {
+      "network": [
+        "origin",
+        "destination"
+      ],
+      "vehicle_types": [
+        "name"
+      ],
+      "mandatory_rentals": [
+        "origin",
+        "destination",
+        "vehicle_type"
+      ],
+      "handling_capacities": [
+        "center"
+      ],
+      "truck_capacities": [
+        "center"
+      ],
+      "historical_demand": [
+        "demand_id"
+      ],
+      "forecast_demand_template": [
+        "demand_id"
+      ]
+    }
+  }
+}
